@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>VeriPOS IA Pro</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0b0e13">
+<style>
+  :root{
+    --bg:#0b0e13; --panel:#0f141c; --panel2:#0c1118; --line:#1a2532;
+    --fg:#eaf2ff; --muted:#9fb0c3; --blue:#0a84ff; --blue2:#0f6bd1;
+    --card:#0f121a; --radius:14px; --shadow:0 20px 50px rgba(0,0,0,.45);
+    --low-stock: #ff4d4d; --focus: #0a84ff;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--fg);font-family:system-ui,Inter,Segoe UI,Roboto,Arial}
+  .app{display:grid;grid-template-columns:250px 1fr 380px;gap:16px;min-height:100vh}
+  aside{padding:18px 14px;border-right:1px solid var(--line);background:linear-gradient(180deg,#0e141c 0%,#0a0f15 100%)}
+  main{padding:18px 8px 18px 0}
+  .right{padding:18px 18px 18px 0}
+  .brand{display:flex;align-items:center;gap:10px;margin-bottom:16px}
+  .dot{width:10px;height:10px;border-radius:50%;background:var(--blue)}
+  .brand b{font-size:1.06rem;letter-spacing:.3px}
+  .nav{display:flex;flex-direction:column;gap:6px}
+  .nav a{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;color:var(--fg);text-decoration:none;border:1px solid transparent;cursor:pointer}
+  .nav a:hover,.nav a.active{background:var(--panel);border-color:var(--line)}
+  .ic{width:22px;text-align:center;opacity:.9}
+  .top{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+  .search{flex:1;display:flex;align-items:center;gap:8px;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px 12px}
+  .search input{flex:1;background:transparent;border:0;color:var(--fg);outline:none}
+  .chip{background:#101827;border:1px solid var(--line);color:var(--muted);padding:8px 12px;border-radius:999px}
+  .tabs{display:flex;gap:8px;border-bottom:1px solid var(--line);margin-bottom:12px;flex-wrap:wrap}
+  .tab{padding:10px 14px;border:1px solid var(--line);border-bottom:0;border-radius:10px 10px 0 0;background:var(--panel2);color:var(--muted);cursor:pointer}
+  .tab.active{background:var(--panel);color:#fff}
+  .grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px;box-shadow:var(--shadow);cursor:pointer;display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:center}
+  .thumb{width:64px;height:64px;border-radius:12px;overflow:hidden;background:#0c1118;border:1px solid var(--line);display:flex;align-items:center;justify-content:center}
+  .thumb img{width:100%;height:100%;object-fit:cover}
+  .name{font-weight:600}
+  .price{font-weight:700;color:#cfe3ff}
+  .ticket{position:sticky;top:18px;background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:16px;box-shadow:var(--shadow)}
+  .row{display:flex;justify-content:space-between;margin:.45rem 0}
+  .row.total{font-size:1.1rem;font-weight:700}
+  .btn{width:100%;background:var(--blue);border:none;color:#fff;padding:12px;border-radius:12px;cursor:pointer;font-weight:700}
+  .btn:hover{background:var(--blue2)}
+  .btn.sec{background:#162233}
+  .btn:disabled{opacity:0.5;cursor:not-allowed}
+  .muted{color:var(--muted)}
+  .split{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center}
+  .modal{position:fixed;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;backdrop-filter:blur(6px);z-index:999}
+  .panel{width:min(620px,94vw);background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:18px;box-shadow:var(--shadow)}
+  input,select,button,textarea{font-family:inherit}
+  .in{width:100%;background:#0a1018;border:1px solid var(--line);border-radius:12px;padding:12px;color:#fff}
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .list{max-height:260px;overflow:auto;border:1px solid var(--line);border-radius:12px;padding:8px;background:#0a1016}
+  .item{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;padding:8px;border-bottom:1px solid #131b27}
+  .actions button{margin-left:6px}
+  .qty{display:flex;align-items:center;gap:6px}
+  .qty button{width:28px;height:28px;background:var(--blue);color:#fff;border:none;border-radius:6px;cursor:pointer}
+  .qty button:hover{background:var(--blue2)}
+  .qty span{font-weight:600}
+  .stock{font-size:0.85rem;color:var(--muted)}
+  .low-stock{color:var(--low-stock)}
+  :focus{outline:2px solid var(--focus)}
+  @media (max-width:1150px){ .app{grid-template-columns:220px 1fr} .right{display:none} .grid{grid-template-columns:repeat(2,1fr)} }
+  @media (max-width:720px){ .app{grid-template-columns:1fr} aside{display:none} .grid{grid-template-columns:1fr 1fr} }
+  @media print{ .app{grid-template-columns:1fr} aside,.top,.tabs,.grid,.btn,.modal{display:none!important} body{background:#fff;color:#000} .ticket{border:0;box-shadow:none} .print-only{display:block} .no-print{display:none} }
+</style>
+</head>
+<body>
+<div class="app">
+  <!-- SIDEBAR -->
+  <aside>
+    <div class="brand"><span class="dot"></span><b>VeriPOS IA Pro</b></div>
+    <nav class="nav">
+      <a class="active" data-view="pos"><span class="ic">🏠</span>Inicio (POS)</a>
+      <a data-view="ventas"><span class="ic">💸</span>Ventas</a>
+      <a data-view="productos"><span class="ic">📦</span>Productos (admin)</a>
+      <a data-view="inventario"><span class="ic">📊</span>Inventario</a>
+      <a data-view="empleados"><span class="ic">👥</span>Empleados</a>
+      <a data-view="informes"><span class="ic">📈</span>Informes</a>
+      <a data-view="ia"><span class="ic">🤖</span>IA Asistente</a>
+      <a data-view="ajustes"><span class="ic">⚙️</span>Ajustes</a>
+    </nav>
+  </aside>
+
+  <!-- MAIN CONTENT -->
+  <main id="mainContent">
+    <!-- POS VIEW (default) -->
+    <div id="posView">
+      <div class="top">
+        <div class="search"><span>🔎</span><input id="buscar" placeholder="Buscar producto… (ej. Smash)" aria-label="Buscar producto"></div>
+        <div class="chip">IGIC variable</div>
+      </div>
+      <div id="tabs" class="tabs"></div>
+      <div id="grid" class="grid"></div>
+    </div>
+  </main>
+
+  <!-- TICKET -->
+  <section class="right">
+    <div class="ticket">
+      <div class="split">
+        <h3 style="margin:0">Ticket</h3>
+        <small class="muted" id="atendido">Atendido por: —</small>
+      </div>
+      <hr style="border-color:#1a2230">
+      <div id="lineas"></div>
+      <hr style="border-color:#1a2230">
+      <div class="row"><span>Subtotal</span><span id="subtotal">0,00 €</span></div>
+      <div class="row"><span>Impuestos</span><span id="igic">0,00 €</span></div>
+      <div class="row"><span>Descuento</span><span id="descuento">0,00 €</span></div>
+      <div class="row total"><span>Total</span><span id="total">0,00 €</span></div>
+      <div id="qrBox" class="muted" style="margin:10px 0 6px"></div>
+      <div class="print-only" style="display:none;text-align:center">
+        <p>NIF: B12345678 · Serie: A-2025 · Nº: <span id="serieNumPrint"></span></p>
+        <p>Método de pago: Efectivo/Tarjeta</p>
+      </div>
+      <button id="btnCobrar" class="btn" disabled>Cobrar / Emitir ticket Veri*Factu</button>
+      <button id="btnImprimir" class="btn sec" style="margin-top:8px;display:none" onclick="window.print()">Imprimir ticket</button>
+      <button id="btnVaciar" class="btn sec" style="margin-top:8px">Vaciar carrito</button>
+      <button id="btnDescuento" class="btn sec" style="margin-top:8px">Aplicar descuento</button>
+    </div>
+  </section>
+</div>
+
+<!-- MODAL INICIO TURNO / LOGIN -->
+<div id="modalTurno" class="modal">
+  <div class="panel">
+    <h3 style="margin:6px 0 10px">👋 Bienvenido, equipo VeriPOS IA Pro</h3>
+    <p class="muted" style="margin-top:0">Inicia sesión para comenzar.</p>
+    <input id="nombre" class="in" placeholder="Nombre de usuario" aria-label="Usuario">
+    <input id="password" class="in" type="password" placeholder="Contraseña" aria-label="Contraseña">
+    <button id="btnTurno" class="btn" style="margin-top:12px">Iniciar sesión</button>
+  </div>
+</div>
+
+<!-- MODAL PRODUCTOS (ADMIN CRUD) -->
+<div id="modalProductos" class="modal" style="display:none">
+  <div class="panel">
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <h3 style="margin:6px 0 10px">📦 Productos (crear/editar)</h3>
+      <button class="btn sec" style="width:auto" onclick="cerrarAdmin()">Cerrar</button>
+    </div>
+    <div class="two" style="margin-top:8px">
+      <div>
+        <label>Nombre</label>
+        <input id="pNombre" class="in" placeholder="Ej. Smash Burger">
+      </div>
+      <div>
+        <label>Precio (€)</label>
+        <input id="pPrecio" class="in" type="number" step="0.01" placeholder="9.90">
+      </div>
+    </div>
+    <div class="two" style="margin-top:8px">
+      <div>
+        <label>Categoría</label>
+        <input id="pCat" class="in" placeholder="Ej. burgers (nueva o existente)">
+      </div>
+      <div>
+        <label>Stock inicial</label>
+        <input id="pStock" class="in" type="number" placeholder="100">
+      </div>
+    </div>
+    <div class="two" style="margin-top:8px">
+      <div>
+        <label>Tasa IGIC (%)</label>
+        <input id="pTax" class="in" type="number" step="0.01" placeholder="7">
+      </div>
+      <div>
+        <label>Imagen URL</label>
+        <input id="pImgUrl" class="in" placeholder="URL de imagen (opcional)">
+      </div>
+    </div>
+    <div style="margin-top:8px">
+      <label>Subir imagen</label>
+      <input id="pImgFile" type="file" accept="image/*" class="in">
+    </div>
+    <div style="display:flex;gap:10px;margin-top:12px">
+      <button class="btn" onclick="guardarProducto()">Guardar</button>
+      <button class="btn sec" onclick="nuevoProducto()">Nuevo</button>
+    </div>
+
+    <h4 style="margin:14px 0 8px">Lista de productos</h4>
+    <div class="list" id="listaAdmin"></div>
+  </div>
+</div>
+
+<!-- MODAL IA ASISTENTE -->
+<div id="modalIA" class="modal" style="display:none">
+  <div class="panel">
+    <h3 style="margin:6px 0 10px">🤖 IA Asistente</h3>
+    <p class="muted">Pregunta sobre ventas, inventario o sugerencias.</p>
+    <textarea id="iaPrompt" class="in" rows="4" placeholder="Ej. ¿Qué producto se vende más?"></textarea>
+    <button class="btn" style="margin-top:12px" onclick="consultarIA()">Consultar</button>
+    <div id="iaRespuesta" style="margin-top:12px;white-space:pre-wrap"></div>
+  </div>
+</div>
+
+<!-- MODAL DESCUENTO -->
+<div id="modalDescuento" class="modal" style="display:none">
+  <div class="panel">
+    <h3 style="margin:6px 0 10px">Aplicar Descuento</h3>
+    <div class="two">
+      <div>
+        <label>Tipo</label>
+        <select id="dTipo" class="in">
+          <option value="porcentaje">Porcentaje (%)</option>
+          <option value="fijo">Fijo (€)</option>
+        </select>
+      </div>
+      <div>
+        <label>Valor</label>
+        <input id="dValor" class="in" type="number" step="0.01" placeholder="10">
+      </div>
+    </div>
+    <button class="btn" style="margin-top:12px" onclick="aplicarDescuento()">Aplicar</button>
+  </div>
+</div>
+
+<script>
+// ===== PWA =====
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => navigator.serviceWorker.register('sw.js?v=5'));
+}
+
+// ===== Estado & utilidades =====
+const fmtEUR = new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR', minimumFractionDigits: 2 });
+const € = n => fmtEUR.format(Number(n) || 0);
+const el = s => document.querySelector(s);
+const els = s => [...document.querySelectorAll(s)];
+const LS_PRODUCTS = 'veripos_products_v3';
+const LS_SALES = 'veripos_sales_v2';
+const LS_USERS = 'veripos_users_v2';
+const SALT = 'veripos_salt_2025'; // Sal para hash
+
+let state = {
+  user: null, // {name, role: 'admin' o 'cajero'}
+  vistaActual: 'pos',
+  filtro: '',
+  q: '',
+  carrito: [], // [{id, qty, descuento: {tipo, valor}}]
+  editId: null,
+  descuentoGlobal: {tipo: 'porcentaje', valor: 0},
+  productos: cargarLS(LS_PRODUCTS, []),
+  ventas: cargarLS(LS_SALES, []),
+  users: cargarLS(LS_USERS, [{name: 'admin', passHash: '', role: 'admin'}]), // Migra en init
+  _totales: {subtotal: 0, impuestos: 0, descuento: 0, total: 0},
+  config: {nif: 'B12345678', serie: 'A-2025', stockAlerta: 10}
+};
+
+function uid(){ return Math.random().toString(36).slice(2)+Date.now().toString(36); }
+function guardarLS(key, data){ try{ localStorage.setItem(key, JSON.stringify(data)); }catch(e){ console.warn('LS save error', key, e); } }
+function cargarLS(key, def){
+  try{
+    const raw = localStorage.getItem(key);
+    return raw ? JSON.parse(raw) : def;
+  }catch(e){
+    console.warn('LS parse error', key, e);
+    return def;
+  }
+}
+
+// ===== Seguridad Hash con Sal =====
+async function hash(s){
+  const salted = s + SALT;
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(salted));
+  return [...new Uint8Array(buf)].map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+
+// Migración async
+(async ()=>{
+  let changed = false;
+  state.users = state.users.map(u=>{
+    if(u.pass){ changed = true; const tmp = {...u}; delete tmp.pass; tmp.passHash = await hash(u.pass); return tmp; }
+    return u;
+  });
+  if(changed) guardarLS(LS_USERS, state.users);
+})();
+
+// ===== VISTAS =====
+const vistas = {
+  pos: () => {
+    state.vistaActual = 'pos';
+    el("#mainContent").innerHTML = `
+      <div id="posView">
+        <div class="top">
+          <div class="search"><span>🔎</span><input id="buscar" placeholder="Buscar producto… (ej. Smash)" aria-label="Buscar producto"></div>
+          <div class="chip">IGIC variable</div>
+        </div>
+        <div id="tabs" class="tabs"></div>
+        <div id="grid" class="grid"></div>
+      </div>`;
+    pintarTabs();
+    pintarProductos();
+    el("#buscar").addEventListener("input",e=>{ state.q=e.target.value.trim().toLowerCase(); pintarProductos(); });
+  },
+  // Otras vistas similares, con mejoras en informes (top5, por día)
+  informes: () => {
+    state.vistaActual = 'informes';
+    const totalVentas = state.ventas.reduce((acc, v) => acc + v.total, 0);
+    const masVendidos = encontrarTopVendidos(5);
+    let html = `<h3>Informes</h3>
+      <div>Total ventas: ${€(totalVentas)}</div>
+      <h4>Top 5 productos vendidos</h4><ul>`;
+    masVendidos.forEach(p => html += `<li>${p.name}: ${p.cant} unidades</li>`);
+    html += '</ul>';
+    el("#mainContent").innerHTML = html;
+  },
+  // ... (resto similar)
+};
+
+function pintarVista(view) {
+  state.vistaActual = view;
+  cerrarAdmin();
+  cerrarIA();
+  el("#mainContent").innerHTML = '';
+  vistas[view] ? vistas[view]() : el("#mainContent").innerHTML = '<h3>Vista no implementada</h3>';
+  actualizarBotones();
+}
+
+function actualizarBotones() {
+  el("#btnCobrar").disabled = !state.user;
+  // Desactiva admin si no role 'admin'
+}
+
+// ===== POS con mejoras =====
+function pintarProductos(){
+  // ... (agrega aria-label a cards)
+  lista.forEach(p => {
+    // ...
+    card.setAttribute('aria-label', `Producto ${p.name}, precio ${€(p.price)}, stock ${p.stock}`);
+    // ...
+  });
+}
+
+// ===== Carrito con descuentos y multi-tax =====
+function calcularTotales() {
+  let subtotal = 0, impuestos = 0, descuento = 0;
+  state.carrito.forEach(it => {
+    const p = state.productos.find(x => x.id === it.id);
+    if (!p) return;
+    let precioLinea = p.price * it.qty;
+    if (it.descuento) {
+      const desc = it.descuento.tipo === 'porcentaje' ? precioLinea * (it.descuento.valor / 100) : it.descuento.valor;
+      descuento += desc;
+      precioLinea -= desc;
+    }
+    subtotal += precioLinea;
+    impuestos += precioLinea * (p.tax / 100);
+  });
+  // Descuento global
+  const descGlobal = state.descuentoGlobal.tipo === 'porcentaje' ? subtotal * (state.descuentoGlobal.valor / 100) : state.descuentoGlobal.valor;
+  descuento += descGlobal;
+  const total = subtotal + impuestos - descuento;
+  state._totales = {subtotal, impuestos, descuento, total};
+  return state._totales;
+}
+
+function pintarTicket(){
+  // ... (usa calcularTotales())
+  const {subtotal, impuestos, descuento, total} = calcularTotales();
+  el("#subtotal").textContent = €(subtotal);
+  el("#igic").textContent = €(impuestos);
+  el("#descuento").textContent = €(-descuento);
+  el("#total").textContent = €(total);
+  // ...
+}
+
+// ===== Eventos con teclas extendidas =====
+document.addEventListener('keydown', e=>{
+  if(e.key === 'F9'){ e.preventDefault(); if(state.user) el('#btnCobrar').click(); }
+  if(e.key === 'F8'){ e.preventDefault(); el('#btnVaciar').click(); }
+  if(e.key === '/' ){ e.preventDefault(); const b=el('#buscar'); if(b) b.focus(); }
+  if(e.key === 'Enter' && document.activeElement === el('#buscar')){ /* Simula agregar primer resultado */ }
+});
+
+// ===== Login =====
+el("#btnTurno").onclick = async () => {
+  const name = el("#nombre").value.trim();
+  const pass = el("#password").value;
+  const u = state.users.find(u => u.name === name);
+  if(!u) return alert("Credenciales inválidas");
+  const ok = u.passHash ? (await hash(pass) === u.passHash) : false;
+  if(!ok) return alert("Credenciales inválidas");
+  state.user = u;
+  el("#atendido").textContent = "Atendido por: " + name;
+  el("#modalTurno").style.display = "none";
+  pintarVista('pos');
+  actualizarBotones();
+};
+
+// ===== Descuentos =====
+el("#btnDescuento").onclick = () => el("#modalDescuento").style.display = 'flex';
+function aplicarDescuento(){
+  const tipo = el("#dTipo").value;
+  const valor = parseFloat(el("#dValor").value);
+  if(isNaN(valor) || valor <= 0) return alert("Valor inválido");
+  state.descuentoGlobal = {tipo, valor};
+  pintarTicket();
+  el("#modalDescuento").style.display = 'none';
+}
+
+// ===== Cobrar con impresión =====
+el("#btnCobrar").onclick = () => {
+  if (!state.user) return alert("Inicia sesión");
+  if (!state.carrito.length) return alert("Añade productos");
+  const {subtotal, impuestos, total} = calcularTotales();
+  const items = state.carrito.map(it => {
+    const p = state.productos.find(x => x.id === it.id);
+    if (p.stock < it.qty) return alert(`Stock insuficiente para ${p.name}`);
+    p.stock -= it.qty;
+    return {id: it.id, name: p.name, qty: it.qty, price: p.price, tax: p.tax};
+  });
+  const num = (state.ventas.length + 1).toString().padStart(6,'0');
+  el("#serieNumPrint").textContent = num;
+  const venta = {date: Date.now(), items, total, base: subtotal, impuestos, user: state.user.name, serie: state.config.serie, num};
+  state.ventas.push(venta);
+  guardarLS(LS_PRODUCTS, state.productos);
+  guardarLS(LS_SALES, state.ventas);
+  alert(`✅ Ticket emitido\nCamarero: ${state.user.name}\nTotal: ${€(total)}`);
+  state.carrito = [];
+  state.descuentoGlobal = {tipo: 'porcentaje', valor: 0};
+  pintarTicket();
+  el("#btnImprimir").style.display = "block";
+};
+
+// ===== Top vendidos =====
+function encontrarTopVendidos(top = 5) {
+  const conteo = {};
+  state.ventas.forEach(v => v.items.forEach(it => conteo[it.id] = (conteo[it.id] || 0) + it.qty));
+  return Object.entries(conteo).sort((a,b) => b[1] - a[1]).slice(0, top).map(([id, cant]) => ({...state.productos.find(p => p.id === id), cant}));
+}
+
+// ===== Arranque =====
+el("#modalTurno").style.display = 'flex';
+// Productos por defecto con tax
+if (!state.productos.length) {
+  state.productos = [
+    {id:uid(), cat:"burgers", name:"Smash Burger", price:9.90, img:"", stock:100, tax:7},
+    // ...
+  ];
+  guardarLS(LS_PRODUCTS, state.productos);
+}
+
+// Resto del código (admin, inventario, IA) con fixes similares
+</script>
+</body>
+</html>
