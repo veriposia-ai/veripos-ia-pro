@@ -318,7 +318,7 @@ const vistas = {
     const totalVentas = state.ventas.reduce((acc, v) => acc + v.total, 0);
     const masVendidos = encontrarTopVendidos(5);
     let html = `<h3>Informes</h3>
-      <div>Total ventas: ${€(totalVentas)}</div>
+      <div>Total ventas: ${formatEUR(totalVentas)}</div>
       <h4>Top 5 productos vendidos</h4><ul>`;
     masVendidos.forEach(p => html += `<li>${p.name}: ${p.cant} unidades</li>`);
     html += '</ul>';
