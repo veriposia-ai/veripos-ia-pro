@@ -377,10 +377,10 @@ function calcularTotales() {
 function pintarTicket(){
   // ... (usa calcularTotales())
   const {subtotal, impuestos, descuento, total} = calcularTotales();
-  el("#subtotal").textContent = €(subtotal);
-  el("#igic").textContent = €(impuestos);
-  el("#descuento").textContent = €(-descuento);
-  el("#total").textContent = €(total);
+  el("#subtotal").textContent = formatEUR(subtotal);
+  el("#igic").textContent = formatEUR(impuestos);
+  el("#descuento").textContent = formatEUR(-descuento);
+  el("#total").textContent = formatEUR(total);
   // ...
 }
 
