@@ -435,7 +435,7 @@ el("#btnCobrar").onclick = () => {
   state.ventas.push(venta);
   guardarLS(LS_PRODUCTS, state.productos);
   guardarLS(LS_SALES, state.ventas);
-  alert(`✅ Ticket emitido\nCamarero: ${state.user.name}\nTotal: ${€(total)}`);
+  alert(`✅ Ticket emitido\nCamarero: ${state.user.name}\nTotal: ${formatEUR(total)}`);
   state.carrito = [];
   state.descuentoGlobal = {tipo: 'porcentaje', valor: 0};
   pintarTicket();
