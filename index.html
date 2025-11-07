@@ -269,15 +269,31 @@ async function hash(s){
   return [...new Uint8Array(buf)].map(b=>b.toString(16).padStart(2,'0')).join('');
 }
 
-// Migración async
-(async ()=>{
+// Migración segura de usuarios (sin error "await is only valid…")
+(async () => {
   let changed = false;
-  state.users = state.users.map(u=>{
-    if(u.pass){ changed = true; const tmp = {...u}; delete tmp.pass; tmp.passHash = await hash(u.pass); return tmp; }
-    return u;
-  });
-  if(changed) guardarLS(LS_USERS, state.users);
+  const migrated = [];
+  for (const u of state.users) {
+    if (u.pass && !u.passHash) {
+      changed = true;
+      migrated.push({ name: u.name, role: u.role || 'admin', passHash: await hash(u.pass) });
+    } else {
+      migrated.push(u);
+    }
+  }
+  state.users = migrated;
+  if (changed) guardarLS(LS_USERS, state.users);
 })();
+  (async function ensureDefaultAdmin() {
+  if (!state.users || !state.users.length || !state.users.some(u => u.passHash)) {
+    const defaultPass = 'admin123';
+    state.users = [{ name:'admin', role:'admin', passHash: await hash(defaultPass) }];
+    guardarLS(LS_USERS, state.users);
+    console.info('Admin por defecto: admin / admin123');
+  }
+})();
+
+
 
 // ===== VISTAS =====
 const vistas = {
