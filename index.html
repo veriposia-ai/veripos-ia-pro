@@ -346,7 +346,7 @@ function pintarProductos(){
   // ... (agrega aria-label a cards)
   lista.forEach(p => {
     // ...
-    card.setAttribute('aria-label', `Producto ${p.name}, precio ${€(p.price)}, stock ${p.stock}`);
+    card.setAttribute('aria-label', `Producto ${p.name}, precio ${formatEUR(p.price)}, stock ${p.stock}`);
     // ...
   });
 }
