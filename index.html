@@ -227,7 +227,7 @@ if ('serviceWorker' in navigator) {
 
 // ===== Estado & utilidades =====
 const fmtEUR = new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR', minimumFractionDigits: 2 });
-const € = n => fmtEUR.format(Number(n) || 0);
+const formatEUR = n => fmtEUR.format(Number(n) || 0);
 const el = s => document.querySelector(s);
 const els = s => [...document.querySelectorAll(s)];
 const LS_PRODUCTS = 'veripos_products_v3';
